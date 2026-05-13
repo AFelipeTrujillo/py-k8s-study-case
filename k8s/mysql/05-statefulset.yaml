@@ -51,16 +51,13 @@ spec:
             limits:
               memory: "512Mi"
               cpu: "500m"
-      volumes:
-        - name: mysql-data
-          persistentVolumeClaim:
-            claimName: mysql-pvc
   volumeClaimTemplates:
     - metadata:
-        name: mysql-pvc
+        name: mysql-data
       spec:
         accessModes:
           - ReadWriteOnce
         resources:
           requests:
             storage: 1Gi
+
