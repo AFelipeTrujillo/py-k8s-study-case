@@ -25,6 +25,8 @@ spec:
           ports:
             - containerPort: 8000
           env:
+            - name: API_VERSION
+              value: "v2"
             - name: DB_HOST
               value: "mysql-0.mysql-service.mysql-ns.svc.cluster.local"
             - name: DB_PORT
@@ -51,3 +53,4 @@ spec:
             limits:
               memory: "128Mi"
               cpu: "200m"
+

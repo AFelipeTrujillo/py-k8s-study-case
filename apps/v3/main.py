@@ -36,7 +36,7 @@ def read_root():
     except:
         ip = "unknown"
     return {
-        "version": "v3",
+        "version": os.getenv("API_VERSION", "v3"),
         "hostname": hostname,
         "ip": ip
     }
