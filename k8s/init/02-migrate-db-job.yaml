@@ -1,0 +1,49 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migrate-db-job
+  namespace: mysql-ns
+spec:
+  ttlSecondsAfterFinished: 100
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: mysql-migrate
+          image: mysql:8.0
+          command:
+            - /bin/bash
+            - -c
+            - |
+              sleep 10
+              mysql -h mysql-0.mysql-service.mysql-ns.svc.cluster.local -u root -prootpassword testdb <<'EOF'
+              -- Step 1: Add new columns (nullable initially)
+              ALTER TABLE users
+                ADD COLUMN first_name VARCHAR(50) DEFAULT NULL AFTER username,
+                ADD COLUMN last_name VARCHAR(50) DEFAULT NULL AFTER first_name;
+
+              -- Step 2: Migrate existing data
+              -- Assumption: username format is "firstname.lastname" or just a single name
+              -- If it contains a dot, split it; otherwise, use the whole username as first_name
+              UPDATE users
+              SET
+                first_name = CASE
+                  WHEN username LIKE '%.%' THEN SUBSTRING_INDEX(username, '.', 1)
+                  ELSE username
+                END,
+                last_name = CASE
+                  WHEN username LIKE '%.%' THEN SUBSTRING_INDEX(username, '.', -1)
+                  ELSE NULL
+                END;
+
+              -- Step 3: Make first_name NOT NULL after migration
+              -- last_name stays nullable for users without dot in username
+              ALTER TABLE users
+                MODIFY COLUMN first_name VARCHAR(50) NOT NULL;
+
+              -- Show migration result
+              SELECT id, username, first_name, last_name, email FROM users;
+              EOF
+              echo "Migration completed successfully!"
+      restartPolicy: OnFailure
+

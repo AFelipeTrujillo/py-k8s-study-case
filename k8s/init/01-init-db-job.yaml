@@ -19,15 +19,18 @@ spec:
               CREATE TABLE IF NOT EXISTS users (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 username VARCHAR(50) NOT NULL UNIQUE,
+                first_name VARCHAR(50) NOT NULL,
+                last_name VARCHAR(50) DEFAULT NULL,
                 email VARCHAR(100) NOT NULL
               );
 
-              INSERT IGNORE INTO users (username, email) VALUES
-                ('alice', 'alice@example.com'),
-                ('bob', 'bob@example.com'),
-                ('charlie', 'charlie@example.com'),
-                ('diana', 'diana@example.com'),
-                ('eve', 'eve@example.com');
+              INSERT IGNORE INTO users (username, first_name, last_name, email) VALUES
+                ('alice', 'Alice', NULL, 'alice@example.com'),
+                ('bob.smith', 'Bob', 'Smith', 'bob@example.com'),
+                ('charlie.brown', 'Charlie', 'Brown', 'charlie@example.com'),
+                ('diana.ross', 'Diana', 'Ross', 'diana@example.com'),
+                ('eve', 'Eve', NULL, 'eve@example.com');
               EOF
               echo "Database initialized successfully!"
       restartPolicy: OnFailure
+

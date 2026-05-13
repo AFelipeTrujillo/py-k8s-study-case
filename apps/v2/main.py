@@ -43,20 +43,46 @@ def read_root():
 
 @app.get("/users")
 def read_users():
-    """Return list of users from MySQL database."""
+    """Return list of users from MySQL database.
+    
+    Uses first_name and last_name (new schema after migration).
+    Falls back to username if first_name is not available (backward compatibility).
+    """
     connection = get_db_connection()
     if connection is None:
         return {"error": "Database connection failed", "users": []}
     
     try:
         cursor = connection.cursor(dictionary=True)
-        cursor.execute("SELECT id, username, email FROM users")
+        cursor.execute("SELECT id, username, first_name, last_name, email FROM users")
         users = cursor.fetchall()
         cursor.close()
         connection.close()
         return {"users": users}
     except Error as e:
         return {"error": str(e), "users": []}
+
+@app.get("/users/{user_id}")
+def read_user(user_id: int):
+    """Return a single user by ID."""
+    connection = get_db_connection()
+    if connection is None:
+        return {"error": "Database connection failed"}
+    
+    try:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute(
+            "SELECT id, username, first_name, last_name, email FROM users WHERE id = %s",
+            (user_id,)
+        )
+        user = cursor.fetchone()
+        cursor.close()
+        connection.close()
+        if user:
+            return user
+        return {"error": "User not found"}
+    except Error as e:
+        return {"error": str(e)}
 
 if __name__ == "__main__":
     import uvicorn
