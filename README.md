@@ -53,6 +53,8 @@ k8s-multi-api/
 │       ├── main.py
 │       ├── Dockerfile
 │       └── requirements.txt
+├── docs/
+│   └── migration-strategy.md
 ├── k8s/
 │   ├── mysql/
 │   │   ├── 01-namespace.yaml
@@ -68,8 +70,10 @@ k8s-multi-api/
 │   │   ├── 05-service-v2.yaml
 │   │   └── 06-service-v3.yaml
 │   └── init/
-│       └── 01-init-db-job.yaml
-└── AGENTS.md
+│       ├── 01-init-db-job.yaml
+│       └── 02-migrate-db-job.yaml
+├── AGENTS.md
+└── README.md
 ```
 
 ## Components
@@ -86,14 +90,16 @@ Each version is a simple FastAPI app:
 - **`GET /users`** → Returns JSON list of users from MySQL database
   - Connects to MySQL via the ClusterIP service
   - Queries `users` table (`id`, `username`, `email`)
+  - **v2 only**: also returns `first_name`, `last_name` and includes `GET /users/{id}` endpoint
 
 ### 2. MySQL StatefulSet
 
 - 1 replica (suitable for local learning)
 - StatefulSet with PersistentVolumeClaim (1GB)
 - Headless service for stable network identity
-- `users` table with: `id` (INT AUTO_INCREMENT), `username` (VARCHAR), `email` (VARCHAR)
+- `users` table with: `id` (INT AUTO_INCREMENT), `username` (VARCHAR), `first_name` (VARCHAR), `last_name` (VARCHAR nullable), `email` (VARCHAR)
 - Pre-populated with sample data via an init Job
+- Schema migration supported via a dedicated migration Job (`02-migrate-db-job.yaml`)
 
 ### 3. Kubernetes Resources
 
@@ -106,7 +112,8 @@ Each version is a simple FastAPI app:
 | `05-statefulset.yaml` | StatefulSet | MySQL with persistent storage |
 | `deployment-v*.yaml` | Deployment | FastAPI pods (3 replicas each) |
 | `service-v*.yaml` | Service (NodePort) | Expose each API version |
-| `01-init-db-job.yaml` | Job | Create table & seed data |
+| `01-init-db-job.yaml` | Job | Create table & seed data (new schema with first_name/last_name) |
+| `02-migrate-db-job.yaml` | Job | Migrate existing DB from old schema (username only) to new schema (first_name/last_name) |
 
 ### 4. Networking
 
@@ -149,10 +156,31 @@ kubectl apply -f k8s/init/01-init-db-job.yaml
 curl http://localhost:30081/   # v1
 curl http://localhost:30082/   # v2
 curl http://localhost:30083/   # v3
-curl http://localhost:30081/users  # DB query
+curl http://localhost:30081/users  # DB query (old schema)
+curl http://localhost:30082/users  # DB query (new schema with first_name/last_name)
 ```
 
-### 6. Future Improvements (Next Steps)
+### 6. Database Migrations
+
+When evolving the schema (e.g., adding `first_name` and `last_name` to v2), use the migration Job:
+
+```bash
+# Run migration on an existing cluster with old data
+kubectl apply -f k8s/init/02-migrate-db-job.yaml
+
+# Wait for completion
+kubectl wait --for=condition=complete job/migrate-db-job -n mysql-ns --timeout=60s
+
+# Check logs
+kubectl logs job/migrate-db-job -n mysql-ns
+
+# Rebuild and redeploy the updated API
+docker build -t api-v2:latest ./apps/v2
+minikube image load api-v2:latest
+kubectl rollout restart deployment/api-v2 -n mysql-ns
+```
+
+### 7. Future Improvements (Next Steps)
 
 - [ ] Replace NodePort with **Ingress** (NGINX Ingress Controller)
 - [ ] Add **Ingress routes**: `/v1`, `/v2`, `/v3` → respective services
