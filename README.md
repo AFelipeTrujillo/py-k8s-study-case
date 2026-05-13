@@ -10,8 +10,8 @@ We create **3 FastAPI microservices** (v1, v2, v3) that connect to a **MySQL dat
 
 ```
                       ┌─────────────┐
-                      │   NodePort   │
-                      │  (30081-83)  │
+                      │   NodePort  │
+                      │  (30081-83) │
                       └──────┬──────┘
                              │
               ┌──────────────┼──────────────┐
