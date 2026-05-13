@@ -1,0 +1,33 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: init-db-job
+  namespace: mysql-ns
+spec:
+  ttlSecondsAfterFinished: 100
+  template:
+    spec:
+      containers:
+        - name: mysql-init
+          image: mysql:8.0
+          command:
+            - /bin/bash
+            - -c
+            - |
+              sleep 10
+              mysql -h mysql-0.mysql-service.mysql-ns.svc.cluster.local -u root -prootpassword testdb <<EOF
+              CREATE TABLE IF NOT EXISTS users (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                username VARCHAR(50) NOT NULL UNIQUE,
+                email VARCHAR(100) NOT NULL
+              );
+
+              INSERT IGNORE INTO users (username, email) VALUES
+                ('alice', 'alice@example.com'),
+                ('bob', 'bob@example.com'),
+                ('charlie', 'charlie@example.com'),
+                ('diana', 'diana@example.com'),
+                ('eve', 'eve@example.com');
+              EOF
+              echo "Database initialized successfully!"
+      restartPolicy: OnFailure
