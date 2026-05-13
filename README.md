@@ -180,7 +180,7 @@ minikube image load api-v2:latest
 kubectl rollout restart deployment/api-v2 -n mysql-ns
 ```
 
-## 🔄 API Versions Summary
+## API Versions Summary
 
 | Version | Endpoints | Features | DB Schema |
 |---|---|---|---|
@@ -190,7 +190,7 @@ kubectl rollout restart deployment/api-v2 -n mysql-ns
 
 ---
 
-## 🧪 v3 — CRUD API Details
+## v3 — CRUD API Details
 
 ### Request/Response Examples
 
@@ -246,7 +246,7 @@ curl -X DELETE http://localhost:30083/users/11 -v
 
 ---
 
-## 🐳 Quick Rebuild & Rollout (v3 only)
+## sQuick Rebuild & Rollout (v3 only)
 
 ```bash
 docker build -t api-v3:latest ./apps/v3
@@ -257,7 +257,7 @@ kubectl rollout status deployment/api-v3 -n mysql-ns
 
 ---
 
-## 📋 Logs & Debugging
+## Logs & Debugging
 
 ```bash
 # Follow logs for a specific version
@@ -305,7 +305,7 @@ curl http://localhost:8080/health/ready
 
 ---
 
-## 🗄️ Database Queries
+## Database Queries
 
 ```bash
 # List all users
@@ -320,7 +320,7 @@ kubectl exec -it -n mysql-ns mysql-0 -- mysql -u root -prootpassword testdb
 
 ---
 
-## ⚠️ Troubleshooting
+## Troubleshooting
 
 ### "Error connecting to MySQL" in logs
 
@@ -380,7 +380,7 @@ kubectl exec -it -n mysql-ns deploy/api-v3 -- curl -s http://localhost:8000/heal
 
 ---
 
-## 🧹 Clean Up
+## Clean Up
 
 ```bash
 # Delete entire namespace (everything)
@@ -398,7 +398,7 @@ kubectl delete pvc -n mysql-ns --all
 
 ---
 
-## 📝 Notes for AI Agents
+## Notes for AI Agents
 
 - All manifests are in `k8s/` organized by component
 - Always apply MySQL resources BEFORE API resources
