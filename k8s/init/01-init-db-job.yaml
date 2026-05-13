@@ -15,7 +15,11 @@ spec:
             - -c
             - |
               sleep 10
-              mysql -h mysql-0.mysql-service.mysql-ns.svc.cluster.local -u root -prootpassword testdb <<EOF
+
+              MYSQL_CMD="mysql -h mysql-0.mysql-service.mysql-ns.svc.cluster.local -u root -prootpassword testdb"
+
+              echo "=== Creating users table ==="
+              $MYSQL_CMD -e "
               CREATE TABLE IF NOT EXISTS users (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 username VARCHAR(50) NOT NULL UNIQUE,
@@ -23,14 +27,39 @@ spec:
                 last_name VARCHAR(50) DEFAULT NULL,
                 email VARCHAR(100) NOT NULL
               );
-
+              "
+              echo "=== Creating audit_log table ==="
+              $MYSQL_CMD -e "
+              CREATE TABLE IF NOT EXISTS audit_log (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                action VARCHAR(20) NOT NULL,
+                user_id INT DEFAULT NULL,
+                details TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+              );
+              "
+              echo "=== Seeding sample data ==="
+              $MYSQL_CMD -e "
               INSERT IGNORE INTO users (username, first_name, last_name, email) VALUES
                 ('alice', 'Alice', NULL, 'alice@example.com'),
                 ('bob.smith', 'Bob', 'Smith', 'bob@example.com'),
                 ('charlie.brown', 'Charlie', 'Brown', 'charlie@example.com'),
                 ('diana.ross', 'Diana', 'Ross', 'diana@example.com'),
-                ('eve', 'Eve', NULL, 'eve@example.com');
-              EOF
+                ('eve', 'Eve', NULL, 'eve@example.com'),
+                ('frank.zappa', 'Frank', 'Zappa', 'frank@gmail.com'),
+                ('grace.hopper', 'Grace', 'Hopper', 'grace@gmail.com'),
+                ('henry.ford', 'Henry', 'Ford', 'henry@outlook.com'),
+                ('isabel.allende', 'Isabel', 'Allende', 'isabel@gmail.com'),
+                ('jack.kirby', 'Jack', 'Kirby', 'jack@marvel.com');
+              "
+              echo "=== Inserting sample audit entries ==="
+              $MYSQL_CMD -e "
+              INSERT IGNORE INTO audit_log (action, user_id, details) VALUES
+                ('INIT', NULL, 'Database initialized with sample data'),
+                ('CREATE', 1, 'Created user alice'),
+                ('CREATE', 2, 'Created user bob.smith');
+              "
               echo "Database initialized successfully!"
       restartPolicy: OnFailure
+
 
